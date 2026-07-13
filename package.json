@@ -21,20 +21,26 @@
     "build:ui": "vite build --config src/ui/vite.config.ts",
     "inline:ui": "node scripts/inline-ui.mjs",
     "build:server": "tsc -p tsconfig.server.json",
+    "build:worker": "wrangler deploy --dry-run --outdir dist/worker",
+    "check:cloudflare-limits": "node scripts/check-cloudflare-limits.mjs",
+    "build:cloudflare": "npm run build && npm run build:worker && npm run check:cloudflare-limits",
     "build": "npm run build:ui && npm run inline:ui && npm run build:server",
     "postbuild": "npm run reset:generated",
     "reset:generated": "node scripts/reset-generated-ui.mjs",
     "predev": "npm run build",
     "dev": "node dist/scripts/dev-server.js",
+    "dev:cloudflare": "npm run build:ui && wrangler dev",
     "dev:ui": "vite --config src/ui/vite.config.ts",
     "start": "node dist/scripts/dev-server.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build:cloudflare"
   },
   "dependencies": {
+    "@cfworker/json-schema": "4.1.1",
     "@modelcontextprotocol/ext-apps": "1.7.4",
     "@modelcontextprotocol/sdk": "1.29.0",
+    "agents": "0.17.4",
     "fflate": "0.8.2",
     "openscad-wasm-prebuilt": "1.2.0",
     "three": "0.185.1",
@@ -47,9 +53,10 @@
     "typescript": "5.9.3",
     "vite": "8.1.4",
     "vite-plugin-singlefile": "2.3.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "wrangler": "4.110.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18.0"
   }
 }
