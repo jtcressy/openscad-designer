@@ -45,6 +45,7 @@ describe("OpenSCAD Designer MCP server", () => {
         openWorldHint: false,
       });
       expect(tool._meta).toMatchObject({
+        securitySchemes: [{ type: "noauth" }],
         ui: { resourceUri: DESIGNER_RESOURCE_URI },
         "openai/outputTemplate": DESIGNER_RESOURCE_URI,
       });

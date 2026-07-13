@@ -47,7 +47,7 @@ Cloudflare packages and delivers the app resource but does not evaluate OpenSCAD
 
 The MCP server is the protocol adapter between ChatGPT and the frontend. A standalone browser application would not need it; a ChatGPT app needs it for tool discovery, typed tool calls, UI-resource delivery, and model/UI synchronization.
 
-The current server creates a fresh MCP server and transport for every HTTP POST. It stores no design state, runs no OpenSCAD process, and creates no mesh. Every relevant call carries a complete snapshot.
+The current server creates a fresh MCP server and transport for every HTTP POST. It stores no design state, runs no OpenSCAD process, and creates no mesh. Every relevant call carries a complete snapshot. Every tool explicitly advertises the Apps SDK `noauth` security scheme in both the canonical tool descriptor field and its `_meta` compatibility mirror; the app has no account-linking or OAuth flow because it consumes no user identity or private backend data.
 
 | Tool | Purpose | What the server actually does |
 | --- | --- | --- |
@@ -144,11 +144,13 @@ Shared collaboration is not a future product track. The architecture must not ad
 4. **No shared editing:** collaboration is an explicit product non-goal; concurrency means isolated independent users.
 5. **Cloudflare as the first deployment target:** use a Worker for MCP and Static Assets for the large runtime, published only through GitHub Actions.
 6. **Backend rendering is gated by evidence:** introduce it only after a sandbox, feature, or performance failure demonstrates the need.
+7. **Anonymous tool access:** declare `securitySchemes: [{ type: "noauth" }]` on every tool; add OAuth only if a future feature accesses private user data or a protected backend.
 
 ## References
 
 - [OpenAI: deploy an Apps SDK app](https://developers.openai.com/apps-sdk/deploy)
 - [OpenAI: build the ChatGPT UI](https://developers.openai.com/apps-sdk/build/chatgpt-ui)
+- [OpenAI: authenticate Apps SDK users](https://developers.openai.com/apps-sdk/build/auth)
 - [Cloudflare: build an interactive ChatGPT app](https://developers.cloudflare.com/workers/demos/chatgpt-app/)
 - [Cloudflare: build a remote MCP server](https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/)
 - [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/)

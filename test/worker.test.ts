@@ -246,7 +246,11 @@ describe("Cloudflare Worker", () => {
 
   it("lists all four OpenSCAD design tools", async () => {
     const { message } = await callMcp("tools/list", {});
-    const tools = message.result?.tools as Array<{ name: string }>;
+    const tools = message.result?.tools as Array<{
+      name: string;
+      securitySchemes?: Array<{ type: string }>;
+      _meta?: { securitySchemes?: Array<{ type: string }> };
+    }>;
 
     expect(tools.map(({ name }) => name)).toEqual([
       "open_design",
@@ -254,6 +258,10 @@ describe("Cloudflare Worker", () => {
       "configure_design",
       "export_design",
     ]);
+    for (const tool of tools) {
+      expect(tool.securitySchemes).toEqual([{ type: "noauth" }]);
+      expect(tool._meta?.securitySchemes).toEqual([{ type: "noauth" }]);
+    }
   });
 
   it("reads the designer resource from the injected asset binding", async () => {
