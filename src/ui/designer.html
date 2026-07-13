@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenSCAD Designer</title>
+  </head>
+  <body>
+    <main id="app-shell" aria-busy="true">
+      <header class="toolbar">
+        <div class="design-heading">
+          <span class="app-mark" aria-hidden="true">◇</span>
+          <div>
+            <h1 id="design-name">OpenSCAD Designer</h1>
+            <p id="design-revision">Waiting for a design…</p>
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button id="reset-view" class="secondary" type="button" title="Reset camera">Reset view</button>
+          <button id="fullscreen" class="secondary" type="button">Fullscreen</button>
+          <button id="export-stl" type="button" disabled>STL</button>
+          <button id="export-3mf" type="button" disabled>3MF</button>
+        </div>
+      </header>
+
+      <div id="status" class="status" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Connecting…</span>
+      </div>
+      <div id="error" class="error-banner" role="alert" hidden></div>
+
+      <div class="workspace">
+        <section class="design-stage" aria-label="Design workspace">
+          <nav class="tabs" aria-label="Design views">
+            <button id="preview-tab" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="preview-panel">Preview</button>
+            <button id="code-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="code-panel">SCAD code</button>
+          </nav>
+
+          <div id="preview-panel" class="tab-panel preview-panel" role="tabpanel" aria-labelledby="preview-tab">
+            <div id="viewer" class="viewer"></div>
+            <div id="preview-empty" class="preview-empty">
+              <strong>No geometry yet</strong>
+              <span>Adjust a parameter or apply the source to render a preview.</span>
+            </div>
+          </div>
+
+          <div id="code-panel" class="tab-panel code-panel" role="tabpanel" aria-labelledby="code-tab" hidden>
+            <label class="sr-only" for="source-code">OpenSCAD source</label>
+            <textarea id="source-code" spellcheck="false" aria-label="OpenSCAD source code"></textarea>
+            <footer>
+              <span id="code-state">Source is synchronized</span>
+              <button id="apply-source" type="button" disabled>Apply source</button>
+            </footer>
+          </div>
+        </section>
+
+        <aside class="parameters" aria-label="Design parameters">
+          <div class="parameters-heading">
+            <div>
+              <h2>Parameters</h2>
+              <p>Changes render automatically</p>
+            </div>
+          </div>
+          <form id="parameter-form"></form>
+        </aside>
+      </div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

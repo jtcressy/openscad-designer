@@ -1,0 +1,28 @@
+{
+  "name": "openscad-designer",
+  "version": "0.1.0",
+  "description": "Interactive parametric OpenSCAD modeling with generated controls and a rotatable 3D preview.",
+  "author": {
+    "name": "Joel Cressy",
+    "url": "https://github.com/jtcressy"
+  },
+  "repository": "https://github.com/jtcressy/openscad-designer",
+  "keywords": ["openscad", "cad", "3d-printing", "mcp-app"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OpenSCAD Designer",
+    "shortDescription": "Design printable parametric models in chat.",
+    "longDescription": "Create and refine OpenSCAD source, adjust Customizer parameters in an interactive form, inspect the rendered mesh, and export STL or 3MF geometry.",
+    "developerName": "Joel Cressy",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Design a parametric OpenSCAD part with me.",
+      "Open this SCAD model in the interactive designer.",
+      "Adjust this model and export printable geometry."
+    ],
+    "brandColor": "#F4A23B"
+  },
+  "mcpServers": "./.mcp.json",
+  "apps": "./.app.json"
+}
