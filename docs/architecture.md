@@ -8,12 +8,12 @@ OpenSCAD Designer is intentionally a browser-rendered ChatGPT app, not a hosted 
 
 ChatGPT supplies the intelligence and model runtime. Our deployment does not call the OpenAI API and does not need an OpenAI API key. Cloudflare supplies only the protocol and asset edge; the user’s browser supplies CAD compute.
 
-This architecture supports many independent users once it is deployed: every user receives an isolated iframe and every MCP request receives a fresh stateless server instance. It does **not** currently provide a shared document, accounts, persistence, presence, or real-time co-editing.
+This architecture supports many independent users once it is deployed: every user receives an isolated iframe and every MCP request receives a fresh stateless server instance. Shared documents, membership, permissions, presence, and real-time co-editing are explicitly outside the product scope. Personal persistence is not currently implemented and would not change that boundary.
 
 | Meaning of “multi-user” | Current position |
 | --- | --- |
 | Many people independently use the public app | Architectural target; requires deployment and load testing |
-| Two people edit the same design together | Not implemented and not required for the first release |
+| Two people edit the same design together | Explicitly out of scope |
 | A person returns to saved projects later | Not implemented; files are currently downloaded by the user |
 
 ## Runtime overview
@@ -119,20 +119,11 @@ A backend renderer becomes justified if the developer-mode spike establishes one
 
 If that gate is crossed, OpenSCAD should run in an isolated, resource-limited container service rather than inside the lightweight MCP Worker. The MCP layer would enqueue or proxy render jobs and return artifact references. That is a fallback architecture, not an MVP prerequisite.
 
-## Independent users versus collaboration
+## Independent-user isolation
 
 Independent use requires no shared application state. Each invocation is naturally isolated by the ChatGPT iframe and the request-scoped MCP server. Production hardening still needs request limits, rate limiting, telemetry, and concurrency testing.
 
-Shared editing is a separate product track. It would require at least:
-
-- authenticated project membership and authorization;
-- persistent source and revision history;
-- conflict resolution or a text CRDT;
-- presence and live update channels;
-- explicit ownership and deletion semantics;
-- storage for source, metadata, and optionally generated artifacts.
-
-On Cloudflare that could involve Durable Objects for per-project coordination, D1 for metadata, and R2 for files. None of those services should be added until shared projects are an explicit product requirement.
+Shared collaboration is not a future product track. The architecture must not add shared project membership, collaborative permissions, presence, live synchronization, CRDTs, or shared-session infrastructure. A future personal persistence feature, if requested, should retain single-user ownership and the same cross-user isolation boundary.
 
 ## Security and reliability boundaries
 
@@ -149,7 +140,7 @@ On Cloudflare that could involve Durable Objects for per-project coordination, D
 1. **Browser-first rendering:** keep the real OpenSCAD evaluator in an iframe Web Worker for the first hosted spike.
 2. **Stateless MCP snapshots:** every tool call carries the complete current design state.
 3. **No persistence in v1:** source and meshes stay client-side unless the user downloads them.
-4. **No shared editing in v1:** “multi-user” means isolated concurrent users, not a collaborative document.
+4. **No shared editing:** collaboration is an explicit product non-goal; concurrency means isolated independent users.
 5. **Cloudflare as the first deployment target:** use a Worker for MCP and static assets for the large runtime.
 6. **Backend rendering is gated by evidence:** introduce it only after a sandbox, feature, or performance failure demonstrates the need.
 

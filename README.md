@@ -30,7 +30,7 @@ The main checks cover the Customizer parser, MCP contracts, STL-to-3MF packaging
 
 ## Architecture
 
-See the [architecture overview](docs/architecture.md) for the runtime diagram, MCP tool responsibilities, data lifecycle, multi-user boundary, and backend-rendering decision gate. See the [project plan](docs/project-plan.md) for the proposed pull-request sequence through Cloudflare deployment and plugin publication.
+See the [architecture overview](docs/architecture.md) for the runtime diagram, MCP tool responsibilities, data lifecycle, independent-user isolation boundary, and backend-rendering decision gate. See the [project plan](docs/project-plan.md) for the proposed pull-request sequence through Cloudflare deployment and plugin publication.
 
 - `src/shared/customizer.ts` parses OpenSCAD Customizer groups, descriptions, ranges, dropdowns, vectors, and the `[Hidden]` boundary.
 - `src/ui/` is the MCP App: source editor, generated controls, Three.js orbit viewer, local OpenSCAD worker, and downloads.
@@ -39,7 +39,7 @@ See the [architecture overview](docs/architecture.md) for the runtime diagram, M
 
 Every tool accepts and returns the complete design snapshot. The server therefore keeps no user document state and can run behind a horizontally scaled endpoint.
 
-“Multi-user” currently means many isolated users can run independent iframe sessions. Shared projects, persistence, presence, and real-time co-editing are not implemented and are not prerequisites for the first release.
+Many people can independently run isolated iframe sessions. Shared documents, membership, permissions, presence, and real-time co-editing are explicitly outside the product scope. Personal file import, export, or persistence can evolve separately without introducing collaboration semantics.
 
 ## Build and deployment
 

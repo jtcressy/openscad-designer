@@ -6,7 +6,7 @@ Status: proposed delivery plan following the standalone MVP.
 
 Ship a trustworthy ChatGPT plugin for independently creating and refining parametric OpenSCAD designs, previewing the actual evaluated mesh, and downloading SCAD, STL, or 3MF files for a slicer.
 
-The first release is not a shared CAD workspace. Real-time collaboration is an optional later product track and must not force accounts, databases, or centralized rendering into the initial architecture.
+This project is not a shared CAD workspace. Shared documents, membership, permissions, presence, and real-time collaboration are explicit non-goals. Supporting many independent users must not introduce collaboration infrastructure.
 
 ## Current baseline
 
@@ -29,6 +29,7 @@ The current build has not run inside the real ChatGPT iframe and is not Cloudfla
 
 - Test the riskiest assumption first: can the real ChatGPT sandbox execute this OpenSCAD WASM worker?
 - Keep the MCP endpoint stateless until persistence is an explicit user requirement.
+- Keep any future personal persistence single-user; do not add shared-project or real-time collaboration semantics.
 - Keep server and UI contracts transport-neutral so deployment work does not rewrite product logic.
 - Use one reviewable pull request per milestone.
 - Do not add a backend renderer merely to make the architecture look conventional.
@@ -41,7 +42,7 @@ Scope:
 
 - establish the dedicated repository and land the browser-rendered prototype;
 - document the MCP tool contract and runtime boundaries;
-- document independent-user versus shared-collaboration semantics;
+- document independent-user isolation and the explicit collaboration non-goal;
 - record the phased plan and backend-rendering decision gate.
 
 Acceptance criteria:
@@ -50,7 +51,7 @@ Acceptance criteria:
 - plugin validation passes;
 - the diagram agrees with the implementation;
 - reviewers can identify exactly where source, values, and meshes live;
-- no claim implies that real-time shared editing already exists.
+- documentation states that shared editing is outside the product scope;
 - repository metadata, licensing, and CI are present at the project root.
 
 ### PR 2 — Cloudflare deployment adapter
@@ -165,20 +166,6 @@ Acceptance criteria:
 - a rollback procedure is tested;
 - the plugin is ready to submit, not merely deployable.
 
-## Optional shared-collaboration track
-
-This track begins only if user research demonstrates that multiple people editing one design is a core use case.
-
-Proposed increments:
-
-1. Authenticated personal projects and revision history.
-2. Share links with explicit read or edit permissions.
-3. Optimistic concurrency and conflict detection.
-4. Real-time presence and text synchronization.
-5. Collaborative comments or review checkpoints.
-
-Likely infrastructure includes Durable Objects for a live project session, D1 for metadata and permissions, and R2 for source or generated artifacts. A CRDT or other merge strategy is required before claiming simultaneous editing.
-
 ## Risk register
 
 | Risk | Evidence needed | Mitigation |
@@ -190,7 +177,7 @@ Likely infrastructure includes Durable Objects for a live project session, D1 fo
 | Snapshot tools lose model-visible edits | Multi-turn UI/model tests | Complete snapshot contract plus teardown flush |
 | Public endpoint is abused | Load and rate-limit tests | Stateless design, Cloudflare limits, explicit quotas |
 | GPL obligations are incomplete | License review | Full license and third-party notices before distribution |
-| “Collaborative” wording overpromises | Product/content review | Say “interactive with ChatGPT”; reserve “shared editing” for the optional track |
+| “Collaborative” wording overpromises | Product/content review | Say “interactive with ChatGPT” and state that shared editing is out of scope |
 
 ## Immediate next actions
 
