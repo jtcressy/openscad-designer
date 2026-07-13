@@ -1,6 +1,6 @@
 # OpenSCAD Designer project plan
 
-Status: active delivery plan; PR 1 is complete and the PR 2 adapter is implemented pending hosted preview credentials.
+Status: active delivery plan; PR 1 is complete and PR 2 has a validated Cloudflare preview and is in merge review.
 
 ## Product goal
 
@@ -24,7 +24,7 @@ The standalone repository baseline contains:
 
 ChatGPT supplies the model runtime. The deployed app does not require a separate OpenAI backend process or OpenAI API key.
 
-The current build has not run inside the real ChatGPT iframe. Cloudflare compatibility is covered by the adapter and dry build, but the first hosted preview still requires environment credentials.
+The Cloudflare adapter has been exercised against a live preview, including `/health`, MCP initialization, tool discovery and calls, and UI resource reads. The build has not yet run inside the real ChatGPT iframe; that remains PR 3's primary decision gate.
 
 ## Delivery principles
 
@@ -182,8 +182,7 @@ Acceptance criteria:
 
 ## Immediate next actions
 
-1. Review the Cloudflare adapter PR and configure the `preview` and `production` GitHub Environments.
-2. Let the preview workflow publish the first credentialed Worker version.
-3. Connect the preview endpoint in ChatGPT developer mode.
-4. Make the browser-versus-backend rendering decision from that test.
-5. Continue through hardening and publication as separate, reviewable PRs.
+1. Merge PR 2 after its review and CI gates pass.
+2. Connect the preview endpoint in ChatGPT developer mode.
+3. Make the browser-versus-backend rendering decision from that test.
+4. Continue through hardening and publication as separate, reviewable PRs.

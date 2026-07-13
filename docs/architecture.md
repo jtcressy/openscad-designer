@@ -1,6 +1,6 @@
 # OpenSCAD Designer architecture
 
-Status: browser-rendered MVP with a Cloudflare deployment adapter; live ChatGPT validation remains pending.
+Status: browser-rendered MVP running on a Cloudflare preview; live ChatGPT validation remains pending.
 
 ## Executive summary
 
@@ -12,7 +12,7 @@ This architecture supports many independent users once it is deployed: every use
 
 | Meaning of “multi-user” | Current position |
 | --- | --- |
-| Many people independently use the public app | Architectural target; requires deployment and load testing |
+| Many people independently use the public app | Live preview available; concurrency and production load testing remain pending |
 | Two people edit the same design together | Explicitly out of scope |
 | A person returns to saved projects later | Not implemented; files are currently downloaded by the user |
 
