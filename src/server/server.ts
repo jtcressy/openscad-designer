@@ -13,6 +13,7 @@ import {
   type ExportFormat,
   type ParameterValues,
 } from "./types.js";
+import { advertiseNoAuthToolSecurity } from "./tool-security.js";
 
 export interface OpenScadDesignerAppServerOptions {
   /** Load the built MCP App document without coupling the server to a runtime. */
@@ -301,6 +302,8 @@ export function createOpenScadDesignerAppServer(
       );
     },
   );
+
+  advertiseNoAuthToolSecurity(server);
 
   return server;
 }

@@ -48,6 +48,8 @@ See the [architecture overview](docs/architecture.md) for the runtime diagram, M
 
 Every tool accepts and returns the complete design snapshot. The server therefore keeps no user document state and can run behind a horizontally scaled endpoint.
 
+All tools explicitly declare anonymous (`noauth`) access. The app does not implement OAuth because it has no accounts, private backend records, or user-specific server state; a future protected-data feature must add a real OAuth 2.1 flow rather than relying on an implicit server default.
+
 Many people can independently run isolated iframe sessions. Shared documents, membership, permissions, presence, and real-time co-editing are explicitly outside the product scope. Personal file import, export, or persistence can evolve separately without introducing collaboration semantics.
 
 ## Build and deployment

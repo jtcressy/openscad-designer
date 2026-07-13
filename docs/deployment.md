@@ -53,6 +53,8 @@ Every deployed Worker exposes:
 - `/mcp` — the stateless Streamable HTTP endpoint configured in ChatGPT developer mode.
 - `/health` — a lightweight readiness response for deployment checks and monitoring.
 
+The MCP endpoint is intentionally anonymous. Every entry returned by `tools/list` must contain `securitySchemes: [{ "type": "noauth" }]` and the same array at `_meta.securitySchemes`. ChatGPT uses those explicit declarations instead of attempting OAuth discovery. This is a release contract and is covered by both server and raw Worker transport tests.
+
 ## Local verification
 
 ```sh
