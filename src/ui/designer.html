@@ -38,9 +38,8 @@
 
           <div id="preview-panel" class="tab-panel preview-panel" role="tabpanel" aria-labelledby="preview-tab">
             <div id="viewer" class="viewer"></div>
-            <div id="preview-empty" class="preview-empty">
-              <strong>No geometry yet</strong>
-              <span>Adjust a parameter or apply the source to render a preview.</span>
+            <div id="preview-empty" class="preview-empty" role="status" aria-live="polite" aria-busy="false">
+              <strong id="preview-status-text">No geometry yet</strong>
             </div>
           </div>
 
