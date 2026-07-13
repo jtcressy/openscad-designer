@@ -1,0 +1,55 @@
+{
+  "name": "openscad-designer",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-2.0-or-later",
+  "description": "An MCP App for interactive parametric OpenSCAD design with ChatGPT.",
+  "author": {
+    "name": "Joel Cressy",
+    "url": "https://github.com/jtcressy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtcressy/openscad-designer.git"
+  },
+  "homepage": "https://github.com/jtcressy/openscad-designer#readme",
+  "bugs": {
+    "url": "https://github.com/jtcressy/openscad-designer/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "build:ui": "vite build --config src/ui/vite.config.ts",
+    "inline:ui": "node scripts/inline-ui.mjs",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build": "npm run build:ui && npm run inline:ui && npm run build:server",
+    "postbuild": "npm run reset:generated",
+    "reset:generated": "node scripts/reset-generated-ui.mjs",
+    "predev": "npm run build",
+    "dev": "node dist/scripts/dev-server.js",
+    "dev:ui": "vite --config src/ui/vite.config.ts",
+    "start": "node dist/scripts/dev-server.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "1.7.4",
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "fflate": "0.8.2",
+    "openscad-wasm-prebuilt": "1.2.0",
+    "three": "0.185.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/three": "0.185.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vite": "8.1.4",
+    "vite-plugin-singlefile": "2.3.3",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
