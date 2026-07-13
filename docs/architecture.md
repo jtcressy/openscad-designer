@@ -1,6 +1,6 @@
 # OpenSCAD Designer architecture
 
-Status: draft architecture for the browser-rendered MVP and its first hosted deployment.
+Status: browser-rendered MVP running on a Cloudflare preview; live ChatGPT validation remains pending.
 
 ## Executive summary
 
@@ -12,7 +12,7 @@ This architecture supports many independent users once it is deployed: every use
 
 | Meaning of “multi-user” | Current position |
 | --- | --- |
-| Many people independently use the public app | Architectural target; requires deployment and load testing |
+| Many people independently use the public app | Live preview available; concurrency and production load testing remain pending |
 | Two people edit the same design together | Explicitly out of scope |
 | A person returns to saved projects later | Not implemented; files are currently downloaded by the user |
 
@@ -28,11 +28,10 @@ flowchart TD
     I --> W["Browser Web Worker: OpenSCAD WASM"]
     W -->|"STL mesh"| V["Three.js preview + STL/3MF export"]
     I -->|"current source + values"| H
-    A["Cloudflare static assets"] -.->|"planned packaging"| M
-    A -.->|"planned JS + WASM assets"| I
+    A["Cloudflare Static Assets: bundled designer.html"] -->|"loaded for resources/read"| M
 ```
 
-The dashed Cloudflare edge is a packaging change, not a change in where CAD computation runs. The first hosted version should keep OpenSCAD inside the browser unless a live ChatGPT sandbox test proves that impossible.
+Cloudflare packages and delivers the app resource but does not evaluate OpenSCAD. The first hosted version keeps CAD compute inside the browser unless a live ChatGPT sandbox test proves that impossible.
 
 ## Component responsibilities
 
@@ -76,16 +75,18 @@ The iframe starts an isolated Web Worker containing `openscad-wasm-prebuilt`. Th
 
 “Arbitrary SCAD source” currently means self-contained source supported by this WASM build. There is no project-bundle or virtual-filesystem contract for `include`, `use`, imported STL/SVG/DXF files, textures, or user-provided fonts. Those dependencies require an explicit file workflow before we can claim support.
 
-### Cloudflare deployment target
+### Cloudflare deployment
 
-The planned hosted shape is:
+The hosted shape is:
 
-- A small Cloudflare Worker exposing `/mcp` with a Web-standard, stateless Streamable HTTP transport.
-- Workers Static Assets holding the built app resource and large OpenSCAD runtime.
-- A `workers.dev` preview URL first, followed by a stable custom domain for publication.
-- GitHub-triggered preview and production deployments.
+- A small Cloudflare Worker exposing `/mcp` with a request-scoped Streamable HTTP handler and `/health` for readiness checks.
+- Workers Static Assets holding the self-contained app resource and its large OpenSCAD runtime, outside the Worker script.
+- Pull-request versions with preview aliases, followed by a stable production Worker URL for publication.
+- GitHub Actions as the only publishing path, with separate `preview` and `production` GitHub Environments.
 
-The current Node `IncomingMessage` adapter is not the Cloudflare adapter. Porting it is a contained deployment task; the MCP server factory and tool contracts remain reusable.
+The MCP registrations are runtime-neutral. The Node `IncomingMessage` adapter embeds the same generated UI for local development, while the Worker loads it lazily through the `ASSETS` binding. Both create a fresh server per request and retain no design snapshots.
+
+Cloudflare credentials are environment-scoped in GitHub rather than stored in the repository. Preview and production use different Worker names. Same-repository, non-draft pull requests may upload a preview version after any configured environment approval; fork pull requests never enter the credential-bearing job. Production deploys only from `main`. See the [deployment guide](deployment.md).
 
 ## State and data lifecycle
 
@@ -141,7 +142,7 @@ Shared collaboration is not a future product track. The architecture must not ad
 2. **Stateless MCP snapshots:** every tool call carries the complete current design state.
 3. **No persistence in v1:** source and meshes stay client-side unless the user downloads them.
 4. **No shared editing:** collaboration is an explicit product non-goal; concurrency means isolated independent users.
-5. **Cloudflare as the first deployment target:** use a Worker for MCP and static assets for the large runtime.
+5. **Cloudflare as the first deployment target:** use a Worker for MCP and Static Assets for the large runtime, published only through GitHub Actions.
 6. **Backend rendering is gated by evidence:** introduce it only after a sandbox, feature, or performance failure demonstrates the need.
 
 ## References

@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ServerOptions } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   registerAppResource,
   registerAppTool,
@@ -6,13 +7,19 @@ import {
 } from "@modelcontextprotocol/ext-apps/server";
 import { z } from "zod/v4";
 
-import { designerHtml } from "./generated/designer-html.js";
 import {
   DESIGNER_RESOURCE_URI,
   type DesignToolResult,
   type ExportFormat,
   type ParameterValues,
 } from "./types.js";
+
+export interface OpenScadDesignerAppServerOptions {
+  /** Load the built MCP App document without coupling the server to a runtime. */
+  loadDesignerHtml: () => string | Promise<string>;
+  /** Runtime-specific MCP server options, such as an edge-safe validator. */
+  serverOptions?: ServerOptions;
+}
 
 const DEFAULT_DESIGN_NAME = "design.scad";
 
@@ -146,11 +153,13 @@ function defaultExportFileName(name: string, format: ExportFormat): string {
  * accepts and returns a complete design snapshot so it works behind stateless,
  * horizontally scaled Streamable HTTP endpoints.
  */
-export function createOpenScadDesignerServer(): McpServer {
+export function createOpenScadDesignerAppServer(
+  options: OpenScadDesignerAppServerOptions,
+): McpServer {
   const server = new McpServer({
     name: "openscad-designer",
     version: "0.1.0",
-  });
+  }, options.serverOptions);
 
   registerAppResource(
     server,
@@ -178,7 +187,7 @@ export function createOpenScadDesignerServer(): McpServer {
         {
           uri: DESIGNER_RESOURCE_URI,
           mimeType: RESOURCE_MIME_TYPE,
-          text: designerHtml,
+          text: await options.loadDesignerHtml(),
           _meta: {
             ui: {
               prefersBorder: true,

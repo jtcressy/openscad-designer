@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
-import { createOpenScadDesignerServer } from "./server.js";
+import { createOpenScadDesignerServer } from "./bundled-server.js";
 
 export type StreamableHttpHandler = (
   request: IncomingMessage,
@@ -103,4 +103,3 @@ export function createStreamableHttpHandler(
 
 /** Default Node HTTP handler for deployments that need no customization. */
 export const handleMcpRequest = createStreamableHttpHandler();
-

@@ -1,6 +1,6 @@
 # OpenSCAD Designer project plan
 
-Status: proposed delivery plan following the standalone MVP.
+Status: active delivery plan; PR 1 is complete and PR 2 has a validated Cloudflare preview and is in merge review.
 
 ## Product goal
 
@@ -18,12 +18,13 @@ The standalone repository baseline contains:
 - a Three.js orbit preview;
 - STL and basic 3MF download paths;
 - source/value synchronization into model-visible context;
-- sixteen passing unit and integration tests, including dimensional verification of a rendered STL and export-name normalization;
-- a Node Streamable HTTP development server and validated plugin scaffold.
+- twenty-four passing unit and integration tests, including dimensional verification of a rendered STL, Cloudflare route contracts, and export-name normalization;
+- a Node Streamable HTTP development server and validated plugin scaffold;
+- a Cloudflare Worker adapter, Static Assets packaging, and GitHub Actions definitions for preview and production deployment.
 
 ChatGPT supplies the model runtime. The deployed app does not require a separate OpenAI backend process or OpenAI API key.
 
-The current build has not run inside the real ChatGPT iframe and is not Cloudflare-compatible yet.
+The Cloudflare adapter has been exercised against a live preview, including `/health`, MCP initialization, tool discovery and calls, and UI resource reads. The build has not yet run inside the real ChatGPT iframe; that remains PR 3's primary decision gate.
 
 ## Delivery principles
 
@@ -61,7 +62,6 @@ Scope:
 - add `wrangler.jsonc` with a current compatibility date;
 - add a Web-standard Cloudflare Worker entry point at `/mcp`;
 - reuse the existing MCP server factory and request-scoped stateless behavior;
-- remove the redundant iframe-to-`configure_design` echo path if direct model-context synchronization passes compatibility testing;
 - package the app as Workers Static Assets instead of embedding it in the Worker script;
 - add local Worker tests and deployment documentation;
 - configure preview deployments from GitHub.
@@ -84,7 +84,8 @@ Scope:
 - test the actual iframe rather than a standalone browser page;
 - capture console, network, CSP, WASM, and worker failures;
 - measure first render, rerender, memory behavior, and bundle transfer;
-- verify model/UI round trips after source and parameter changes.
+- verify model/UI round trips after source and parameter changes;
+- remove the redundant iframe-to-`configure_design` echo path only if direct model-context synchronization passes this compatibility test.
 
 Acceptance criteria:
 
@@ -181,8 +182,7 @@ Acceptance criteria:
 
 ## Immediate next actions
 
-1. Review and merge the standalone MVP/architecture PR.
-2. Create the Cloudflare adapter PR without adding persistence or server-side CAD.
-3. Connect the preview endpoint in ChatGPT developer mode.
-4. Make the browser-versus-backend rendering decision from that test.
-5. Continue through hardening and publication as separate, reviewable PRs.
+1. Merge PR 2 after its review and CI gates pass.
+2. Connect the preview endpoint in ChatGPT developer mode.
+3. Make the browser-versus-backend rendering decision from that test.
+4. Continue through hardening and publication as separate, reviewable PRs.

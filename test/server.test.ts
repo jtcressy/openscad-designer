@@ -2,7 +2,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { createOpenScadDesignerServer } from "../src/server/server.js";
+import { createOpenScadDesignerServer } from "../src/server/bundled-server.js";
+import { createOpenScadDesignerAppServer } from "../src/server/server.js";
 import { DESIGNER_RESOURCE_URI } from "../src/server/types.js";
 
 describe("OpenSCAD Designer MCP server", () => {
@@ -65,6 +66,35 @@ describe("OpenSCAD Designer MCP server", () => {
     expect("text" in content && content.text).toContain(
       "OpenSCAD Designer",
     );
+  });
+
+  it("loads the app resource lazily from the runtime adapter", async () => {
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    let loadCount = 0;
+    const server = createOpenScadDesignerAppServer({
+      loadDesignerHtml: async () => {
+        loadCount += 1;
+        return "<!doctype html><title>Runtime asset</title>";
+      },
+    });
+    const runtimeClient = new Client({
+      name: "runtime-loader-test",
+      version: "1.0.0",
+    });
+    connections.push({ client: runtimeClient, server });
+    await server.connect(serverTransport);
+    await runtimeClient.connect(clientTransport);
+
+    expect(loadCount).toBe(0);
+    const result = await runtimeClient.readResource({
+      uri: DESIGNER_RESOURCE_URI,
+    });
+
+    expect(loadCount).toBe(1);
+    expect(result.contents[0]).toMatchObject({
+      text: "<!doctype html><title>Runtime asset</title>",
+    });
   });
 
   it("round-trips source, values, schema, and optional render artifacts", async () => {

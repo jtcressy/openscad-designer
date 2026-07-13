@@ -1,5 +1,9 @@
 export {
   createOpenScadDesignerServer,
+} from "./bundled-server.js";
+export {
+  createOpenScadDesignerAppServer,
+  type OpenScadDesignerAppServerOptions,
 } from "./server.js";
 export {
   createStreamableHttpHandler,
@@ -15,4 +19,3 @@ export {
   type ParameterSchema,
   type ParameterValues,
 } from "./types.js";
-

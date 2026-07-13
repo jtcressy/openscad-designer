@@ -1,0 +1,87 @@
+name: Cloudflare Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Stage deployment artifact
+        run: |
+          mkdir -p deploy-artifact/assets
+          cp dist/worker/worker.js deploy-artifact/worker.js
+          cp dist/ui/designer.html deploy-artifact/assets/designer.html
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cloudflare-production-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deploy-artifact/
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cloudflare-production-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deploy-artifact
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+      - name: Write trusted deployment config
+        shell: bash
+        run: |
+          cat > wrangler.deploy.jsonc <<'JSON'
+          {
+            "main": "./deploy-artifact/worker.js",
+            "compatibility_date": "2026-07-13",
+            "compatibility_flags": ["nodejs_compat"],
+            "no_bundle": true,
+            "find_additional_modules": false,
+            "workers_dev": true,
+            "preview_urls": true,
+            "assets": {
+              "directory": "./deploy-artifact/assets",
+              "binding": "ASSETS",
+              "run_worker_first": ["/mcp", "/health"]
+            }
+          }
+          JSON
+      - name: Install pinned deployment tooling without credentials
+        run: npm install --no-save --ignore-scripts --package-lock=false wrangler@4.110.0
+      - name: Deploy
+        id: deploy
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            deploy
+            --config wrangler.deploy.jsonc
+            --name ${{ vars.CLOUDFLARE_WORKER_NAME }}
