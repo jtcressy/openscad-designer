@@ -39,4 +39,15 @@ describe("preview geometry status", () => {
       /\.preview-empty\[hidden\]\s*\{\s*display:\s*none;/,
     );
   });
+
+  it("clears stale geometry and preview state when inputs invalidate it", () => {
+    const source = readFileSync(
+      new URL("../src/ui/main.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toMatch(
+      /function invalidateGeometry\(\): void \{[\s\S]*?viewer\.clear\(\);[\s\S]*?setPreviewState\(\{ hasGeometry: false, rendering: false \}\);[\s\S]*?\n\}/,
+    );
+  });
 });

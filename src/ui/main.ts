@@ -544,6 +544,8 @@ function invalidateGeometry(): void {
   outputs.clear();
   lastStl = undefined;
   lastRenderSignature = "";
+  viewer.clear();
+  setPreviewState({ hasGeometry: false, rendering: false });
 }
 
 function cleanupApp(): void {
