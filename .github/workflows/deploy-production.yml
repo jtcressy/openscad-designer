@@ -84,4 +84,4 @@ jobs:
           command: >-
             deploy
             --config wrangler.deploy.jsonc
-            --name ${{ vars.CLOUDFLARE_WORKER_NAME }}
+            --name ${{ vars.CLOUDFLARE_PRODUCTION_WORKER_NAME }}

@@ -60,7 +60,7 @@ npm run build:cloudflare
 
 The UI remains a self-contained HTML asset so its blob-backed OpenSCAD worker and WASM runtime can be tested in ChatGPT before externalizing any browser code. The Node development build embeds that document in its server output. The Cloudflare build instead stores it under Workers Static Assets and keeps it out of the Worker script; the current dry-run Worker bundle is about 264 KiB gzip.
 
-Preview and production publishing is intentionally GitHub-Actions-only. Configure the environment-scoped Cloudflare secret and variables described in the [deployment guide](docs/deployment.md); the two environments must use different Worker names. Pull requests upload isolated preview versions, while `main` is the only production source. No Cloudflare credential files belong in the repository.
+Preview and production publishing is intentionally GitHub-Actions-only. Configure the environment-scoped Cloudflare credentials and shared production Worker name described in the [deployment guide](docs/deployment.md). Pull requests upload isolated, aliased versions without changing production traffic, while `main` is the only production deployment source. No Cloudflare credential files belong in the repository.
 
 To launch in ChatGPT developer mode, use the HTTPS `/mcp` URL from a preview deployment and test a cube render inside the real ChatGPT sandbox. `.app.json` and `.mcp.json` deliberately contain no deployment-specific IDs or URLs yet.
 

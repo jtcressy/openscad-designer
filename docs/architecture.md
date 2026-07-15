@@ -86,7 +86,7 @@ The hosted shape is:
 
 The MCP registrations are runtime-neutral. The Node `IncomingMessage` adapter embeds the same generated UI for local development, while the Worker loads it lazily through the `ASSETS` binding. Both create a fresh server per request and retain no design snapshots.
 
-Cloudflare credentials are environment-scoped in GitHub rather than stored in the repository. Preview and production use different Worker names. Same-repository, non-draft pull requests may upload a preview version after any configured environment approval; fork pull requests never enter the credential-bearing job. Production deploys only from `main`. See the [deployment guide](deployment.md).
+Cloudflare credentials are environment-scoped in GitHub rather than stored in the repository. Preview and production use the same Worker: pull requests upload aliased versions without changing production traffic, while only `main` creates a production deployment. Same-repository, non-draft pull requests may enter the credential-bearing preview job after any configured environment approval; fork pull requests never do. See the [deployment guide](deployment.md).
 
 ## State and data lifecycle
 

@@ -78,15 +78,6 @@ jobs:
           JSON
       - name: Install pinned deployment tooling without credentials
         run: npm install --no-save --ignore-scripts --package-lock=false wrangler@4.110.0
-      - name: Bootstrap preview Worker
-        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            deploy
-            --config wrangler.deploy.jsonc
-            --name ${{ vars.CLOUDFLARE_WORKER_NAME }}
       - name: Upload preview
         id: upload
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
@@ -96,5 +87,5 @@ jobs:
           command: >-
             versions upload
             --config wrangler.deploy.jsonc
-            --name ${{ vars.CLOUDFLARE_WORKER_NAME }}
+            --name ${{ vars.CLOUDFLARE_PRODUCTION_WORKER_NAME }}
             --preview-alias pr-${{ github.event.pull_request.number }}
