@@ -8,6 +8,7 @@ const workerPath = path.join(root, "dist", "worker", "worker.js");
 const assetsPath = path.join(root, "dist", "ui");
 const maxWorkerGzipBytes = 3_000_000;
 const maxAssetBytes = 25 * 1024 * 1024;
+const maxMcpHtmlBytes = 256 * 1024;
 
 async function listFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -28,11 +29,26 @@ if (workerGzipBytes > maxWorkerGzipBytes) {
 }
 
 const assetFiles = await listFiles(assetsPath);
+const headers = await readFile(path.join(assetsPath, "_headers"), "utf8");
+for (const requiredHeader of [
+  "Access-Control-Allow-Origin: *",
+  "Cross-Origin-Resource-Policy: cross-origin",
+]) {
+  if (!headers.includes(requiredHeader)) {
+    throw new Error(`dist/ui/_headers is missing ${requiredHeader}.`);
+  }
+}
+
 for (const assetPath of assetFiles) {
   const { size } = await stat(assetPath);
   if (size > maxAssetBytes) {
     throw new Error(
       `${path.relative(root, assetPath)} is ${size} bytes; limit is ${maxAssetBytes}.`,
+    );
+  }
+  if (path.basename(assetPath) === "designer.html" && size > maxMcpHtmlBytes) {
+    throw new Error(
+      `${path.relative(root, assetPath)} is ${size} bytes; MCP app HTML limit is ${maxMcpHtmlBytes}.`,
     );
   }
 }

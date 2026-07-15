@@ -20,7 +20,7 @@ Require a reviewer for `production`, prevent self-review and admin bypass, and r
 
 The preview workflow runs only for non-draft pull requests whose head repository is this repository. Pull requests from forks must never enter a credential-bearing job and must never receive environment secrets.
 
-An unprivileged build job checks out the pull request, installs dependencies, runs the full check suite, and uploads only the prebuilt Worker script and static app asset. A separate job then enters the `preview` environment, downloads that same-run artifact, and uses a fixed deployment configuration with bundling disabled. It never checks out the pull request or executes its package scripts. The pinned Wrangler CLI is installed with lifecycle scripts disabled before the Cloudflare secret is passed to the pinned deployment action.
+An unprivileged build job checks out the pull request, installs dependencies, runs the full check suite, and uploads only the prebuilt Worker script and complete static app asset directory. A separate job then enters the `preview` environment, downloads that same-run artifact, and uses a fixed deployment configuration with bundling disabled. It never checks out the pull request or executes its package scripts. The pinned Wrangler CLI is installed with lifecycle scripts disabled before the Cloudflare secret is passed to the pinned deployment action.
 
 The credentialed job uploads the revision to the production Worker's version history with a pull-request alias, but does not deploy that version to production traffic:
 

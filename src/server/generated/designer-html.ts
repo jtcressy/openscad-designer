@@ -1,5 +1,5 @@
 // Placeholder replaced by `npm run inline:ui` during the production build.
-// Keeping this tiny avoids committing the roughly 12 MB generated app bundle.
+// The production shell stays small and loads the large runtime as a static asset.
 export const designerHtml = `<!doctype html>
 <html lang="en">
   <head><meta charset="utf-8"><title>OpenSCAD Designer</title></head>
