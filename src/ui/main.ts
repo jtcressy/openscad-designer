@@ -8,6 +8,7 @@ import type { CustomizerSchema, OpenScadValue } from "../shared/customizer.js";
 import { parseOpenScadCustomizer, toOpenScadDefinitions } from "../shared/customizer.js";
 import { CadViewer, loadStlArrayBuffer } from "./cad-viewer.js";
 import { designFileName } from "./file-names.js";
+import { downloadGeometry, geometryToArrayBuffer } from "./geometry-download.js";
 import { renderOpenScad, disposeOpenScadRenderer } from "./openscad/client.js";
 import { stlTo3mf } from "./openscad/three-mf.js";
 import { ParameterForm } from "./parameter-form.js";
@@ -332,7 +333,7 @@ async function requestExport(format: "stl" | "3mf", requestedFileName?: string):
       output = await requestServerExport(format, fileName);
     }
     if (!output) throw new Error(`No ${format.toUpperCase()} output was returned.`);
-    await downloadGeometry(output, fileName);
+    await downloadGeometry(output, fileName, downloadOptions());
     setStatus(`${format.toUpperCase()} ready`, "ready");
   } catch (error) {
     showError(`Export failed: ${errorMessage(error)}`);
@@ -370,6 +371,7 @@ async function fulfillExportRequest(request: NonNullable<DesignerPayload["export
     await downloadGeometry(
       { format: "stl", buffer: bytes, fileName: request.fileName, mimeType: "text/plain" },
       request.fileName,
+      downloadOptions(),
     );
     setStatus("SCAD ready", "ready");
     return;
@@ -377,52 +379,14 @@ async function fulfillExportRequest(request: NonNullable<DesignerPayload["export
   await requestExport(request.format, request.fileName);
 }
 
-async function downloadGeometry(output: GeometryOutput, fallbackName: string): Promise<void> {
-  const fileName = output.fileName ?? fallbackName;
-  const mimeType = output.mimeType ?? (output.format === "stl" ? "model/stl" : "model/3mf");
-  if (connected && app.getHostCapabilities()?.downloadFile) {
-    if (output.url && !output.buffer && !output.dataBase64 && !output.bytes) {
-      const result = await app.downloadFile({
-        contents: [{
-          type: "resource_link",
-          uri: output.url,
-          name: fileName,
-          mimeType,
-        }],
-      });
-      if (result.isError) throw new Error("The host declined the download.");
-      return;
-    }
-    const buffer = await geometryToArrayBuffer(output);
-    const result = await app.downloadFile({
-      contents: [{
-        type: "resource",
-        resource: {
-          uri: `file:///${fileName}`,
-          mimeType,
-          blob: arrayBufferToBase64(buffer),
-        },
-      }],
-    });
-    if (result.isError) throw new Error("The host declined the download.");
-    return;
-  }
-
-  if (output.url && !output.buffer && !output.dataBase64 && !output.bytes) {
-    const anchor = document.createElement("a");
-    anchor.href = output.url;
-    anchor.download = fileName;
-    anchor.rel = "noopener";
-    anchor.click();
-    return;
-  }
-  const buffer = await geometryToArrayBuffer(output);
-  const url = URL.createObjectURL(new Blob([buffer], { type: mimeType }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+function downloadOptions(): Parameters<typeof downloadGeometry>[2] {
+  if (!connected) return {};
+  return {
+    host: {
+      capabilityAdvertised: app.getHostCapabilities()?.downloadFile !== undefined,
+      downloadFile: (params) => app.downloadFile(params),
+    },
+  };
 }
 
 function applySource(): void {
@@ -476,41 +440,6 @@ function applyHostContext(context: HostContext | undefined): void {
   }
   const modes = context.availableDisplayModes;
   if (modes) elements.fullscreen.hidden = !modes.includes("fullscreen");
-}
-
-async function geometryToArrayBuffer(geometry: GeometryOutput): Promise<ArrayBuffer> {
-  if (geometry.buffer instanceof ArrayBuffer) return geometry.buffer.slice(0);
-  if (geometry.buffer instanceof Uint8Array) return uint8ToArrayBuffer(geometry.buffer);
-  if (geometry.bytes) return Uint8Array.from(geometry.bytes).buffer;
-  if (geometry.dataBase64) return base64ToArrayBuffer(geometry.dataBase64);
-  if (geometry.url) {
-    const response = await fetch(geometry.url);
-    if (!response.ok) throw new Error(`Download returned HTTP ${response.status}.`);
-    return response.arrayBuffer();
-  }
-  throw new Error("Geometry did not include a URL or binary payload.");
-}
-
-function base64ToArrayBuffer(input: string): ArrayBuffer {
-  const encoded = input.includes(",") ? input.slice(input.indexOf(",") + 1) : input;
-  const binary = atob(encoded.replace(/\s/g, ""));
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes.buffer;
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let result = "";
-  const chunkSize = 0x8000;
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    result += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
-  }
-  return btoa(result);
-}
-
-function uint8ToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 }
 
 function toRenderableValues(values: DesignValues): Record<string, OpenScadValue> {
