@@ -12,6 +12,10 @@ import { renderOpenScad, disposeOpenScadRenderer } from "./openscad/client.js";
 import { stlTo3mf } from "./openscad/three-mf.js";
 import { ParameterForm } from "./parameter-form.js";
 import {
+  previewStatusText,
+  type PreviewStatusState,
+} from "./preview-status.js";
+import {
   cloneValues,
   isDesignerPayload,
   type ConfigureDesignInput,
@@ -30,6 +34,7 @@ const elements = {
   error: requireElement<HTMLElement>("error"),
   viewer: requireElement<HTMLElement>("viewer"),
   previewEmpty: requireElement<HTMLElement>("preview-empty"),
+  previewStatusText: requireElement<HTMLElement>("preview-status-text"),
   parameterForm: requireElement<HTMLFormElement>("parameter-form"),
   previewTab: requireElement<HTMLButtonElement>("preview-tab"),
   codeTab: requireElement<HTMLButtonElement>("code-tab"),
@@ -61,6 +66,10 @@ let renderGeneration = 0;
 let lastRenderSignature = "";
 let lastStl: ArrayBuffer | undefined;
 let disposed = false;
+let previewState: PreviewStatusState = {
+  hasGeometry: false,
+  rendering: false,
+};
 
 const parameters = new ParameterForm(elements.parameterForm, (values) => {
   if (!current) return;
@@ -159,7 +168,7 @@ function consumePayload(payload: DesignerPayload, options: { render: boolean }):
   if (payload.status) setStatus(payload.status, payload.error ? "error" : "ready");
   if (payload.render?.supported === false) {
     viewer.clear();
-    elements.previewEmpty.hidden = false;
+    setPreviewState({ hasGeometry: false, rendering: false });
     showError(payload.render.reason ?? "This model cannot be rendered in the browser.");
     return;
   }
@@ -241,11 +250,16 @@ async function renderLocally(): Promise<void> {
   if (!current || current.render?.supported === false) return;
   const signature = designSignature(current.name, current.source, current.values);
   if (signature === lastRenderSignature && lastStl) {
+    setPreviewState({ hasGeometry: true, rendering: false });
     setStatus("Ready", "ready");
     return;
   }
 
   const generation = ++renderGeneration;
+  setPreviewState({
+    hasGeometry: previewState.hasGeometry,
+    rendering: true,
+  });
   setStatus("Rendering OpenSCAD…", "busy");
   try {
     const values = toRenderableValues(current.values);
@@ -262,12 +276,15 @@ async function renderLocally(): Promise<void> {
     });
     outputs.delete("3mf");
     loadStlArrayBuffer(viewer, result.stl);
-    elements.previewEmpty.hidden = true;
+    setPreviewState({ hasGeometry: true, rendering: false });
     hideError();
     setStatus(result.diagnostics.length ? "Rendered with diagnostics" : "Ready", "ready");
   } catch (error) {
     if (generation !== renderGeneration || error instanceof DOMException && error.name === "AbortError") return;
-    elements.previewEmpty.hidden = false;
+    setPreviewState({
+      hasGeometry: previewState.hasGeometry,
+      rendering: false,
+    });
     showError(errorMessage(error));
     setStatus("Render failed", "error");
   }
@@ -279,10 +296,13 @@ async function displayGeometry(geometry: GeometryOutput): Promise<void> {
     lastStl = buffer;
     outputs.delete("3mf");
     loadStlArrayBuffer(viewer, buffer);
-    elements.previewEmpty.hidden = true;
+    setPreviewState({ hasGeometry: true, rendering: false });
     setStatus("Ready", "ready");
   } catch (error) {
-    elements.previewEmpty.hidden = false;
+    setPreviewState({
+      hasGeometry: previewState.hasGeometry,
+      rendering: false,
+    });
     showError(`Could not load the STL preview: ${errorMessage(error)}`);
   }
 }
@@ -524,6 +544,8 @@ function invalidateGeometry(): void {
   outputs.clear();
   lastStl = undefined;
   lastRenderSignature = "";
+  viewer.clear();
+  setPreviewState({ hasGeometry: false, rendering: false });
 }
 
 function cleanupApp(): void {
@@ -546,6 +568,17 @@ function setStatus(message: string, state: "ready" | "busy" | "error"): void {
   elements.statusText.textContent = message;
   elements.status.classList.toggle("busy", state === "busy");
   elements.status.classList.toggle("error", state === "error");
+}
+
+function setPreviewState(state: PreviewStatusState): void {
+  previewState = state;
+  const message = previewStatusText(state);
+  elements.previewStatusText.textContent = message;
+  elements.previewEmpty.hidden = message.length === 0;
+  elements.previewEmpty.setAttribute(
+    "aria-busy",
+    String(state.rendering && !state.hasGeometry),
+  );
 }
 
 function showError(message: string): void {

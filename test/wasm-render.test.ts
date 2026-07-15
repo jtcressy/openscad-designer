@@ -1,4 +1,3 @@
-import { createOpenSCAD } from "openscad-wasm-prebuilt";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { describe, expect, it } from "vitest";
 
@@ -6,6 +5,7 @@ import {
   parseOpenScadCustomizer,
   toOpenScadDefinitions,
 } from "../src/shared/customizer.js";
+import { renderOpenScadSource } from "../src/ui/openscad/runtime.js";
 
 describe("OpenSCAD WASM render path", () => {
   it("renders the actual mesh with Customizer overrides", async () => {
@@ -24,9 +24,9 @@ cube([width, depth, height]);`;
     const definitions = toOpenScadDefinitions({ width: 20 })
       .map((definition) => `${definition};`)
       .join("\n");
-    const openscad = await createOpenSCAD({ printErr: () => undefined });
-    const stl = await openscad.renderToStl(`${source}\n${definitions}`);
-    const bytes = new TextEncoder().encode(stl);
+    const result = await renderOpenScadSource(`${source}\n${definitions}`);
+    expect(result.backend).toBe("Manifold");
+    const bytes = new TextEncoder().encode(result.stl);
     const geometry = new STLLoader().parse(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
     );

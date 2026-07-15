@@ -1,4 +1,4 @@
-import { createOpenSCAD } from "openscad-wasm-prebuilt";
+import { renderOpenScadSource } from "./runtime.js";
 
 interface RenderRequest {
   id: number;
@@ -27,12 +27,10 @@ self.onmessage = async (event: MessageEvent<RenderRequest>) => {
     // OpenSCAD variables use last-assignment-wins semantics in a scope, so
     // appending validated Customizer assignments overrides model defaults.
     const effectiveSource = `${source}\n\n// OpenSCAD Designer parameter overrides\n${definitions}\n`;
-    const openscad = await createOpenSCAD({
-      print: (line: string) => diagnostics.push(line),
-      printErr: (line: string) => diagnostics.push(line),
+    const result = await renderOpenScadSource(effectiveSource, {
+      onDiagnostic: (line) => diagnostics.push(line),
     });
-    const stlText = await openscad.renderToStl(effectiveSource);
-    const encoded = new TextEncoder().encode(stlText);
+    const encoded = new TextEncoder().encode(result.stl);
     const stl = encoded.buffer.slice(
       encoded.byteOffset,
       encoded.byteOffset + encoded.byteLength,

@@ -226,8 +226,13 @@ h1 {
   text-align: center;
 }
 
-.preview-empty strong { color: var(--text); font-size: 14px; }
-.preview-empty span { max-width: 320px; font-size: 12px; }
+.preview-empty[hidden] { display: none; }
+
+.preview-empty strong {
+  color: var(--text);
+  font-size: clamp(20px, 4vw, 36px);
+  line-height: 1.15;
+}
 
 .code-panel {
   display: flex;
