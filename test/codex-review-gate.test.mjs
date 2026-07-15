@@ -1,11 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { CODEX_LOGIN, findCodexSignal } from "../scripts/check-codex-review.mjs";
+import { CODEX_LOGIN, findCodexSignal, githubPages } from "../scripts/check-codex-review.mjs";
 
 const headSha = "0123456789abcdef";
 const reviewSince = "2026-07-15T20:00:00Z";
 
 describe("Codex review gate", () => {
+  it("loads every API page before checking for a review signal", async () => {
+    const requested = [];
+    const firstPage = Array.from({ length: 100 }, (_, id) => ({ id }));
+    const finalPage = [{ id: 100 }];
+
+    const items = await githubPages("/reviews", async (path) => {
+      requested.push(path);
+      return path.endsWith("page=1") ? firstPage : finalPage;
+    });
+
+    expect(items).toHaveLength(101);
+    expect(requested).toEqual([
+      "/reviews?per_page=100&page=1",
+      "/reviews?per_page=100&page=2",
+    ]);
+  });
+
   it("accepts a Codex review of the current head", () => {
     const signal = findCodexSignal({
       headSha,

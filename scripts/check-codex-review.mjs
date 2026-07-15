@@ -55,6 +55,21 @@ async function github(path) {
   return response.json();
 }
 
+export async function githubPages(path, request = github) {
+  const items = [];
+  for (let page = 1; ; page += 1) {
+    const separator = path.includes("?") ? "&" : "?";
+    const batch = await request(`${path}${separator}per_page=100&page=${page}`);
+    if (!Array.isArray(batch)) {
+      throw new Error(`Expected a paginated array from ${path}`);
+    }
+    items.push(...batch);
+    if (batch.length < 100) {
+      return items;
+    }
+  }
+}
+
 async function main() {
   const repository = requiredEnv("GITHUB_REPOSITORY");
   const prNumber = requiredEnv("PR_NUMBER");
@@ -65,8 +80,8 @@ async function main() {
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const [reviews, reactions] = await Promise.all([
-      github(`/repos/${repository}/pulls/${prNumber}/reviews?per_page=100`),
-      github(`/repos/${repository}/issues/${prNumber}/reactions?per_page=100`),
+      githubPages(`/repos/${repository}/pulls/${prNumber}/reviews`),
+      githubPages(`/repos/${repository}/issues/${prNumber}/reactions`),
     ]);
     const signal = findCodexSignal({ reviews, reactions, headSha, reviewSince });
     if (signal) {
