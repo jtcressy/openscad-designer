@@ -28,7 +28,8 @@ flowchart TD
     I --> W["Browser Web Worker: OpenSCAD WASM"]
     W -->|"STL mesh"| V["Three.js preview + STL/3MF export"]
     I -->|"current source + values"| H
-    A["Cloudflare Static Assets: bundled designer.html"] -->|"loaded for resources/read"| M
+    A["Cloudflare Static Assets: HTML shell + runtime bundles"] -->|"shell loaded for resources/read"| M
+    A -->|"CORS assets allowed by resource CSP"| I
 ```
 
 Cloudflare packages and delivers the app resource but does not evaluate OpenSCAD. The first hosted version keeps CAD compute inside the browser unless a live ChatGPT sandbox test proves that impossible.
@@ -80,7 +81,7 @@ The iframe starts an isolated Web Worker containing `openscad-wasm-prebuilt`. Th
 The hosted shape is:
 
 - A small Cloudflare Worker exposing `/mcp` with a request-scoped Streamable HTTP handler and `/health` for readiness checks.
-- Workers Static Assets holding the self-contained app resource and its large OpenSCAD runtime, outside the Worker script.
+- Workers Static Assets holding a small app shell plus the large OpenSCAD runtime bundle, outside the Worker script. The MCP response rewrites the shell to the current deployment origin and allowlists that exact origin in the resource CSP.
 - Pull-request versions with preview aliases, followed by a stable production Worker URL for publication.
 - GitHub Actions as the only publishing path, with separate `preview` and `production` GitHub Environments.
 

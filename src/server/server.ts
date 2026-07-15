@@ -14,10 +14,13 @@ import {
   type ParameterValues,
 } from "./types.js";
 import { advertiseNoAuthToolSecurity } from "./tool-security.js";
+import { resolveDesignerAssetOrigin } from "../shared/app-assets.js";
 
 export interface OpenScadDesignerAppServerOptions {
   /** Load the built MCP App document without coupling the server to a runtime. */
   loadDesignerHtml: () => string | Promise<string>;
+  /** Public origin serving the scripts and styles referenced by the app shell. */
+  assetOrigin?: string;
   /** Runtime-specific MCP server options, such as an edge-safe validator. */
   serverOptions?: ServerOptions;
 }
@@ -162,6 +165,22 @@ export function createOpenScadDesignerAppServer(
     version: "0.1.0",
   }, options.serverOptions);
 
+  const assetOrigin = options.assetOrigin
+    ? new URL(options.assetOrigin).origin
+    : undefined;
+  const resourceMeta = {
+    ui: {
+      prefersBorder: true,
+      csp: {
+        connectDomains: [],
+        resourceDomains: assetOrigin ? [assetOrigin] : [],
+      },
+    },
+    "openai/widgetDescription":
+      "Edit a parameterized OpenSCAD design and inspect its 3D preview.",
+    "openai/widgetPrefersBorder": true,
+  };
+
   registerAppResource(
     server,
     "OpenSCAD Designer",
@@ -170,37 +189,18 @@ export function createOpenScadDesignerAppServer(
       description:
         "Interactive OpenSCAD source editor, Customizer controls, and 3D preview.",
       mimeType: RESOURCE_MIME_TYPE,
-      _meta: {
-        ui: {
-          prefersBorder: true,
-          csp: {
-            connectDomains: [],
-            resourceDomains: [],
-          },
-        },
-        "openai/widgetDescription":
-          "Edit a parameterized OpenSCAD design and inspect its 3D preview.",
-        "openai/widgetPrefersBorder": true,
-      },
+      _meta: resourceMeta,
     },
     async () => ({
       contents: [
         {
           uri: DESIGNER_RESOURCE_URI,
           mimeType: RESOURCE_MIME_TYPE,
-          text: await options.loadDesignerHtml(),
-          _meta: {
-            ui: {
-              prefersBorder: true,
-              csp: {
-                connectDomains: [],
-                resourceDomains: [],
-              },
-            },
-            "openai/widgetDescription":
-              "Edit a parameterized OpenSCAD design and inspect its 3D preview.",
-            "openai/widgetPrefersBorder": true,
-          },
+          text: resolveDesignerAssetOrigin(
+            await options.loadDesignerHtml(),
+            assetOrigin,
+          ),
+          _meta: resourceMeta,
         },
       ],
     }),

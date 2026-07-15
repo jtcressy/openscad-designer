@@ -12,9 +12,19 @@ export type StreamableHttpHandler = (
 
 export interface StreamableHttpHandlerOptions {
   /** Override the server factory in tests or to add deployment-specific tools. */
-  createServer?: typeof createOpenScadDesignerServer;
+  createServer?: (request: IncomingMessage) => ReturnType<typeof createOpenScadDesignerServer>;
   /** Browser origin to permit. Defaults to `*`; authentication belongs upstream. */
   corsOrigin?: string;
+}
+
+function requestOrigin(request: IncomingMessage): string | undefined {
+  const forwardedProto = request.headers["x-forwarded-proto"];
+  const protocol = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : forwardedProto?.split(",", 1)[0]?.trim();
+  const host = request.headers.host;
+  if (!host) return undefined;
+  return `${protocol || "http"}://${host}`;
 }
 
 function writeJsonRpcError(
@@ -44,7 +54,8 @@ function writeJsonRpcError(
 export function createStreamableHttpHandler(
   options: StreamableHttpHandlerOptions = {},
 ): StreamableHttpHandler {
-  const makeServer = options.createServer ?? createOpenScadDesignerServer;
+  const makeServer = options.createServer ?? ((request) =>
+    createOpenScadDesignerServer(requestOrigin(request)));
   const corsOrigin = options.corsOrigin ?? "*";
 
   return async (request, response, parsedBody) => {
@@ -73,7 +84,7 @@ export function createStreamableHttpHandler(
       return;
     }
 
-    const server = makeServer();
+    const server = makeServer(request);
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });

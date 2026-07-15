@@ -58,13 +58,13 @@ Many people can independently run isolated iframe sessions. Shared documents, me
 npm run build:cloudflare
 ```
 
-The UI remains a self-contained HTML asset so its blob-backed OpenSCAD worker and WASM runtime can be tested in ChatGPT before externalizing any browser code. The Node development build embeds that document in its server output. The Cloudflare build instead stores it under Workers Static Assets and keeps it out of the Worker script; the current dry-run Worker bundle is about 264 KiB gzip.
+The MCP resource is a small HTML shell that loads its versioned JavaScript and CSS from the same Cloudflare deployment. The shell's runtime origin is injected per request and allowlisted in the resource CSP. The large blob-backed OpenSCAD worker and WASM runtime remain in a static JavaScript asset instead of making the MCP `resources/read` response exceed host limits. A Cloudflare Static Assets `_headers` file and the Node development server expose those assets with CORS enabled.
 
 Preview and production publishing is intentionally GitHub-Actions-only. Configure the environment-scoped Cloudflare credentials and shared production Worker name described in the [deployment guide](docs/deployment.md). Pull requests upload isolated, aliased versions without changing production traffic, while `main` is the only production deployment source. No Cloudflare credential files belong in the repository.
 
 To launch in ChatGPT developer mode, use the HTTPS `/mcp` URL from a preview deployment and test a cube render inside the real ChatGPT sandbox. `.app.json` and `.mcp.json` deliberately contain no deployment-specific IDs or URLs yet.
 
-The current all-in-one MCP resource is about 11.9 MB (3.94 MB gzip), mostly the OpenSCAD WASM runtime, and fits Cloudflare's per-static-asset limit. If ChatGPT rejects it or blocks the inline blob worker/WASM policy, split the renderer into versioned HTTPS assets with CORS and add that exact origin to the resource CSP.
+The build enforces a 256 KiB ceiling for `designer.html`; the OpenSCAD runtime is served separately with CORS and the exact deployment origin in `resourceDomains`. If ChatGPT blocks the inline blob worker/WASM policy, the next step is to externalize the worker itself rather than expanding the MCP HTML resource again.
 
 ## Output and limitations
 

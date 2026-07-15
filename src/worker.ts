@@ -63,7 +63,8 @@ function healthResponse(method: string): Response {
 
 export default {
   async fetch(request, env, ctx): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const requestUrl = new URL(request.url);
+    const { pathname } = requestUrl;
 
     if (pathname === "/health") {
       return healthResponse(request.method);
@@ -74,12 +75,21 @@ export default {
       // guarantees that design snapshots cannot leak between callers.
       const server = createOpenScadDesignerAppServer({
         loadDesignerHtml: () => loadDesignerHtml(env.ASSETS),
+        assetOrigin: requestUrl.origin,
         serverOptions: { jsonSchemaValidator },
       });
 
       return createMcpHandler(server, { route: "/mcp" })(request, env, ctx);
     }
 
-    return env.ASSETS.fetch(request);
+    const assetResponse = await env.ASSETS.fetch(request);
+    const headers = new Headers(assetResponse.headers);
+    headers.set("Access-Control-Allow-Origin", "*");
+    headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers,
+    });
   },
 } satisfies WorkerModule;

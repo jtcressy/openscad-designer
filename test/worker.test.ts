@@ -56,9 +56,11 @@ import worker, {
   type WorkerEnv,
 } from "../src/worker.js";
 import { DESIGNER_RESOURCE_URI } from "../src/server/types.js";
+import { DESIGNER_ASSET_ORIGIN_PLACEHOLDER } from "../src/shared/app-assets.js";
 
+const DESIGNER_HTML_TEMPLATE = `<!doctype html><script src="${DESIGNER_ASSET_ORIGIN_PLACEHOLDER}/assets/designer.js"></script>`;
 const DESIGNER_HTML =
-  "<!doctype html><html><body>injected Worker designer</body></html>";
+  '<!doctype html><script src="https://designer.example/assets/designer.js"></script>';
 const MCP_PROTOCOL_VERSION = "2025-11-25";
 
 type JsonRpcId = number | string | null;
@@ -121,7 +123,7 @@ describe("Cloudflare Worker", () => {
         const url = new URL(request.url);
 
         if (url.href === "https://assets.local/designer.html") {
-          return new Response(DESIGNER_HTML, {
+          return new Response(DESIGNER_HTML_TEMPLATE, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
         }
@@ -201,6 +203,10 @@ describe("Cloudflare Worker", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-asset-response")).toBe("true");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    expect(response.headers.get("cross-origin-resource-policy")).toBe(
+      "cross-origin",
+    );
     expect(await response.text()).toBe("asset:/assets/designer.js");
     expect(assetFetch).toHaveBeenCalledTimes(1);
     const request = assetFetch.mock.calls[0]?.[0];
@@ -271,12 +277,20 @@ describe("Cloudflare Worker", () => {
     const contents = message.result?.contents as Array<{
       uri: string;
       text: string;
+      _meta?: {
+        ui?: { csp?: { resourceDomains?: string[] } };
+      };
     }>;
 
     expect(contents).toHaveLength(1);
     expect(contents[0]).toMatchObject({
       uri: DESIGNER_RESOURCE_URI,
       text: DESIGNER_HTML,
+      _meta: {
+        ui: {
+          csp: { resourceDomains: ["https://designer.example"] },
+        },
+      },
     });
     expect(assetFetch).toHaveBeenCalledTimes(1);
     expect(assetFetch).toHaveBeenCalledWith(

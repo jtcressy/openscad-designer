@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createOpenScadDesignerServer } from "../src/server/bundled-server.js";
 import { createOpenScadDesignerAppServer } from "../src/server/server.js";
 import { DESIGNER_RESOURCE_URI } from "../src/server/types.js";
+import { DESIGNER_ASSET_ORIGIN_PLACEHOLDER } from "../src/shared/app-assets.js";
 
 describe("OpenSCAD Designer MCP server", () => {
   const connections: Array<{ client: Client; server: ReturnType<typeof createOpenScadDesignerServer> }> = [];
@@ -95,6 +96,39 @@ describe("OpenSCAD Designer MCP server", () => {
     expect(loadCount).toBe(1);
     expect(result.contents[0]).toMatchObject({
       text: "<!doctype html><title>Runtime asset</title>",
+    });
+  });
+
+  it("resolves external UI assets and advertises their origin in CSP", async () => {
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    const server = createOpenScadDesignerAppServer({
+      assetOrigin: "https://designer.example/path-is-ignored",
+      loadDesignerHtml: () =>
+        `<script src="${DESIGNER_ASSET_ORIGIN_PLACEHOLDER}/assets/designer.js"></script>`,
+    });
+    const runtimeClient = new Client({
+      name: "asset-origin-test",
+      version: "1.0.0",
+    });
+    connections.push({ client: runtimeClient, server });
+    await server.connect(serverTransport);
+    await runtimeClient.connect(clientTransport);
+
+    const result = await runtimeClient.readResource({
+      uri: DESIGNER_RESOURCE_URI,
+    });
+
+    expect(result.contents[0]).toMatchObject({
+      text: '<script src="https://designer.example/assets/designer.js"></script>',
+      _meta: {
+        ui: {
+          csp: {
+            connectDomains: [],
+            resourceDomains: ["https://designer.example"],
+          },
+        },
+      },
     });
   });
 
